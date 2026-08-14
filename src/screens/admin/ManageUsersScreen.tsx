@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { supabase } from '../../lib/supabase';
 import {
-  UserRole, ROLES, ROLE_LABELS, ROLE_COLORS, canManageUsers, isUserRole,
+  UserRole, ROLES, ROLE_LABELS, ROLE_COLORS, canManageUsers, normalizeUserRole,
 } from '../../lib/roles';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ManageUsers'>;
@@ -41,7 +41,7 @@ export default function ManageUsersScreen() {
       .eq('id', user.id)
       .single();
 
-    if (!canManageUsers(isUserRole(myProfile?.role) ? myProfile.role : null)) {
+    if (!canManageUsers(normalizeUserRole(myProfile?.role))) {
       setAccessDenied(true);
       setLoading(false);
       return;
@@ -59,14 +59,12 @@ export default function ManageUsersScreen() {
     }
 
     setUsers(
-      (data ?? [])
-        .filter((p) => isUserRole(p.role))
-        .map((p) => ({
-          id: p.id,
-          username: p.username,
-          email: p.email,
-          role: p.role as UserRole,
-        }))
+      (data ?? []).map((p) => ({
+        id: p.id,
+        username: p.username,
+        email: p.email,
+        role: normalizeUserRole(p.role),
+      }))
     );
     setLoading(false);
   }, []);
@@ -123,7 +121,7 @@ export default function ManageUsersScreen() {
       <View style={styles.centered}>
         <Text style={styles.deniedIcon}>🔒</Text>
         <Text style={styles.deniedTitle}>Admin Only</Text>
-        <Text style={styles.deniedSubtitle}>Only admins can manage user roles.</Text>
+        <Text style={styles.deniedSubtitle}>Only system admins can manage user roles.</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
           <Text style={styles.backLinkText}>← Go Back</Text>
         </TouchableOpacity>

@@ -5,17 +5,59 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myhabitat",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050d03"
+    },
     "platforms": [
       "ios",
       "android"
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.myhabitat.app"
+      "bundleIdentifier": "com.myhabitat.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "myHabitat needs photo library access so you can attach images to habitat overviews.",
+        "NSLocationWhenInUseUsageDescription": "myHabitat uses your location only while the map is open to center the map on where you are and show nearby habitats. Location is not stored or tracked.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.myhabitat.app"
+      "package": "com.myhabitat.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#050d03"
+      },
+      "permissions": [
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "ACCESS_BACKGROUND_LOCATION"
+      ]
     },
-    "plugins": []
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow myHabitat to access your photos for habitat overview images."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "myHabitat uses your location only while the map is open to center the map on where you are and show nearby habitats. Location is not stored or tracked.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ]
+    ]
   }
 }

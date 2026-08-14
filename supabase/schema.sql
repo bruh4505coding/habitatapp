@@ -21,7 +21,7 @@ CREATE TABLE profiles (
   email text UNIQUE NOT NULL,
   bio text,
   profile_picture_url text,
-  role text NOT NULL DEFAULT 'observer' CHECK (role IN ('observer', 'contributor', 'verifier', 'admin')),
+  role text NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   created_at timestamptz DEFAULT now()
 );
 
@@ -39,10 +39,20 @@ RETURNS boolean AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER;
 
-CREATE POLICY "Logged in users can read profiles"
+CREATE POLICY "Users can read own profile"
 ON profiles FOR SELECT
 TO authenticated
-USING (true);
+USING (auth.uid() = id);
+
+CREATE POLICY "Admins can read all profiles"
+ON profiles FOR SELECT
+TO authenticated
+USING (is_role('admin'));
+
+CREATE POLICY "Users can insert own profile"
+ON profiles FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile"
 ON profiles FOR UPDATE

@@ -6,7 +6,7 @@ import {
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { supabase } from '../../lib/supabase';
-import { ROLE_COLORS, ROLE_LABELS, isUserRole } from '../../lib/roles';
+import { roleColor, roleLabel } from '../../lib/roles';
 import GlobalSearchBar from '../../components/GlobalSearchBar';
 
 type Route = RouteProp<RootStackParamList, 'Profile'>;
@@ -18,26 +18,12 @@ type Profile = {
   role: string;
 };
 
-type Observation = {
-  id: string;
-  species: string;
-  created_at: string;
-};
-
-type Contribution = {
-  id: string;
-  type: string;
-  created_at: string;
-};
-
 export default function ProfileScreen() {
   const route = useRoute<Route>();
   const navigation = useNavigation();
   const { userId } = route.params;
 
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [observations, setObservations] = useState<Observation[]>([]);
-  const [contributions, setContributions] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,23 +41,6 @@ export default function ProfileScreen() {
       }
 
       setProfile(profileData);
-
-      const { data: obsData } = await supabase
-        .from('observations')
-        .select('id, species, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      const { data: contribData } = await supabase
-        .from('contributions')
-        .select('id, type, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      setObservations(obsData ?? []);
-      setContributions(contribData ?? []);
       setLoading(false);
     };
 
@@ -112,41 +81,13 @@ export default function ProfileScreen() {
         </View>
         <View>
           <Text style={styles.username}>{profile.username}</Text>
-          <View style={[styles.badge, {
-            backgroundColor: isUserRole(profile.role) ? ROLE_COLORS[profile.role] : '#888',
-          }]}>
-            <Text style={styles.badgeText}>
-              {isUserRole(profile.role) ? ROLE_LABELS[profile.role] : profile.role}
-            </Text>
+          <View style={[styles.badge, { backgroundColor: roleColor(profile.role) }]}>
+            <Text style={styles.badgeText}>{roleLabel(profile.role)}</Text>
           </View>
         </View>
       </View>
 
       {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
-
-      <Text style={styles.sectionTitle}>Recent Observations</Text>
-      {observations.length === 0 ? (
-        <Text style={styles.empty}>No observations yet.</Text>
-      ) : (
-        observations.map((obs) => (
-          <View key={obs.id} style={styles.item}>
-            <Text style={styles.itemTitle}>{obs.species}</Text>
-            <Text style={styles.itemDate}>{new Date(obs.created_at).toLocaleDateString()}</Text>
-          </View>
-        ))
-      )}
-
-      <Text style={styles.sectionTitle}>Recent Contributions</Text>
-      {contributions.length === 0 ? (
-        <Text style={styles.empty}>No contributions yet.</Text>
-      ) : (
-        contributions.map((contrib) => (
-          <View key={contrib.id} style={styles.item}>
-            <Text style={styles.itemTitle}>{contrib.type}</Text>
-            <Text style={styles.itemDate}>{new Date(contrib.created_at).toLocaleDateString()}</Text>
-          </View>
-        ))
-      )}
     </ScrollView>
   );
 }
@@ -156,6 +97,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f0',
     padding: 20,
+    paddingTop: 56,
   },
   backButton: {
     marginBottom: 12,
@@ -215,37 +157,5 @@ const styles = StyleSheet.create({
     color: '#555',
     marginBottom: 20,
     lineHeight: 20,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  empty: {
-    fontSize: 14,
-    color: '#aaa',
-    marginBottom: 8,
-  },
-  item: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  itemTitle: {
-    fontSize: 15,
-    color: '#1a2e1a',
-    fontWeight: '500',
-  },
-  itemDate: {
-    fontSize: 12,
-    color: '#aaa',
   },
 });

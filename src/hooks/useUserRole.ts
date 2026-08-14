@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
-import { isUserRole, UserRole } from '../lib/roles';
+import { normalizeUserRole, UserRole } from '../lib/roles';
 
 export function useUserRole() {
   const [role, setRole] = useState<UserRole | null>(null);
@@ -28,7 +28,7 @@ export function useUserRole() {
           .single();
 
         if (active) {
-          setRole(isUserRole(data?.role) ? data.role : 'observer');
+          setRole(normalizeUserRole(data?.role));
           setLoading(false);
         }
       };

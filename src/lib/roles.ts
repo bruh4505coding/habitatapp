@@ -1,63 +1,39 @@
-export type UserRole = 'observer' | 'contributor' | 'verifier' | 'admin';
+export type UserRole = 'user' | 'admin';
 
-export const ROLES: UserRole[] = ['observer', 'contributor', 'verifier', 'admin'];
-
-const ROLE_RANK: Record<UserRole, number> = {
-  observer: 0,
-  contributor: 1,
-  verifier: 2,
-  admin: 3,
-};
+export const ROLES: UserRole[] = ['user', 'admin'];
 
 export function isUserRole(value: string | null | undefined): value is UserRole {
-  return ROLES.includes(value as UserRole);
+  if (value === 'user' || value === 'admin') return true;
+  // Legacy roles from before simplification — treat as regular user
+  if (value === 'observer' || value === 'contributor' || value === 'verifier') return true;
+  return false;
 }
 
-export function hasMinRole(userRole: UserRole | null, minRole: UserRole): boolean {
-  if (!userRole) return false;
-  return ROLE_RANK[userRole] >= ROLE_RANK[minRole];
+/** Normalize legacy platform roles to the current model */
+export function normalizeUserRole(value: string | null | undefined): UserRole {
+  if (value === 'admin') return 'admin';
+  return 'user';
 }
 
-/** Observer+ — view habitats and profiles */
-export function canViewHabitats(role: UserRole | null): boolean {
-  return hasMinRole(role, 'observer');
-}
-
-/** Observer+ — add informal observations */
-export function canAddObservation(role: UserRole | null): boolean {
-  return hasMinRole(role, 'observer');
-}
-
-/** Contributor+ — submit formal contributions */
-export function canSubmitContribution(role: UserRole | null): boolean {
-  return hasMinRole(role, 'contributor');
-}
-
-/** Contributor+ — suggest boundary edits */
-export function canSubmitBoundaryEdit(role: UserRole | null): boolean {
-  return hasMinRole(role, 'contributor');
-}
-
-/** Verifier+ — approve/reject submissions */
-export function canReviewSubmissions(role: UserRole | null): boolean {
-  return hasMinRole(role, 'verifier');
-}
-
-/** Admin only — manage users and roles */
+/** Platform admin — manage users and system-wide settings */
 export function canManageUsers(role: UserRole | null): boolean {
   return role === 'admin';
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  observer: 'Observer',
-  contributor: 'Contributor',
-  verifier: 'Verifier',
-  admin: 'Admin',
+  user: 'User',
+  admin: 'System Admin',
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {
-  observer: '#4caf50',
-  contributor: '#2196f3',
-  verifier: '#ff9800',
+  user: '#4caf50',
   admin: '#e53935',
 };
+
+export function roleLabel(value: string | null | undefined): string {
+  return ROLE_LABELS[normalizeUserRole(value)];
+}
+
+export function roleColor(value: string | null | undefined): string {
+  return ROLE_COLORS[normalizeUserRole(value)];
+}

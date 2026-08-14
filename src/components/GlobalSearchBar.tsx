@@ -20,12 +20,23 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type HabitatResult = {
+  kind: 'habitat';
   id: string;
   name: string;
   habitat_code: string | null;
   habitat_type: string | null;
   region: string | null;
 };
+
+type StewardGroupResult = {
+  kind: 'group';
+  id: string;
+  name: string;
+  slug: string;
+  region: string | null;
+};
+
+type SearchResult = HabitatResult | StewardGroupResult;
 
 type Anchor = {
   top: number;
@@ -44,7 +55,7 @@ type Props = {
 };
 
 const DEBOUNCE_MS = 300;
-const DROPDOWN_MAX_HEIGHT = 280;
+const DROPDOWN_MAX_HEIGHT = 320;
 
 function sanitizeSearchTerm(text: string): string {
   return text.replace(/[%_,]/g, '').trim();
@@ -52,14 +63,15 @@ function sanitizeSearchTerm(text: string): string {
 
 export default function GlobalSearchBar({
   onQueryChange,
-  placeholder = 'Search habitats...',
+  placeholder = 'Search habitats & steward groups...',
   variant = 'light',
   fullWidth = false,
 }: Props) {
   const navigation = useNavigation<Nav>();
   const wrapperRef = useRef<View>(null);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<HabitatResult[]>([]);
+  const [habitatResults, setHabitatResults] = useState<HabitatResult[]>([]);
+  const [groupResults, setGroupResults] = useState<StewardGroupResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [anchor, setAnchor] = useState<Anchor>({ top: 0, left: 0, width: Dimensions.get('window').width - 40 });
@@ -74,7 +86,8 @@ export default function GlobalSearchBar({
   const runSearch = useCallback(async (text: string) => {
     const term = sanitizeSearchTerm(text);
     if (!term) {
-      setResults([]);
+      setHabitatResults([]);
+      setGroupResults([]);
       setShowDropdown(false);
       setSearching(false);
       return;
@@ -82,19 +95,36 @@ export default function GlobalSearchBar({
 
     setSearching(true);
     const pattern = `%${term}%`;
-    const { data, error } = await supabase
-      .from('habitats')
-      .select('id, name, habitat_code, habitat_type, region')
-      .or(
-        `name.ilike.${pattern},habitat_code.ilike.${pattern},habitat_type.ilike.${pattern},region.ilike.${pattern}`
-      )
-      .limit(10);
 
-    if (error) {
-      setResults([]);
-    } else {
-      setResults(data ?? []);
-    }
+    const [habitatRes, groupRes] = await Promise.all([
+      supabase
+        .from('habitats')
+        .select('id, name, habitat_code, habitat_type, region')
+        .or(
+          `name.ilike.${pattern},habitat_code.ilike.${pattern},habitat_type.ilike.${pattern},region.ilike.${pattern}`
+        )
+        .limit(8),
+      supabase
+        .from('steward_groups')
+        .select('id, name, slug, region')
+        .eq('is_public', true)
+        .eq('status', 'active')
+        .or(`name.ilike.${pattern},slug.ilike.${pattern},region.ilike.${pattern},mission.ilike.${pattern}`)
+        .limit(8),
+    ]);
+
+    setHabitatResults(
+      (habitatRes.error ? [] : habitatRes.data ?? []).map((item) => ({
+        kind: 'habitat' as const,
+        ...item,
+      })),
+    );
+    setGroupResults(
+      (groupRes.error ? [] : groupRes.data ?? []).map((item) => ({
+        kind: 'group' as const,
+        ...item,
+      })),
+    );
     setShowDropdown(true);
     setSearching(false);
     updateAnchor();
@@ -117,17 +147,23 @@ export default function GlobalSearchBar({
     }
   }, [showDropdown, updateAnchor]);
 
-  const handleSelect = (item: HabitatResult) => {
+  const handleSelect = (item: SearchResult) => {
     setQuery('');
-    setResults([]);
+    setHabitatResults([]);
+    setGroupResults([]);
     setShowDropdown(false);
     Keyboard.dismiss();
-    navigation.navigate('HabitatDetail', { habitatId: item.id });
+    if (item.kind === 'habitat') {
+      navigation.navigate('HabitatDetail', { habitatId: item.id });
+    } else {
+      navigation.navigate('StewardGroup', { groupId: item.id });
+    }
   };
 
   const handleClear = () => {
     setQuery('');
-    setResults([]);
+    setHabitatResults([]);
+    setGroupResults([]);
     setShowDropdown(false);
     onQueryChange?.('');
   };
@@ -137,12 +173,48 @@ export default function GlobalSearchBar({
   };
 
   const isLight = variant === 'light';
+  const hasResults = habitatResults.length > 0 || groupResults.length > 0;
+
+  const renderSection = (title: string, items: SearchResult[]) => {
+    if (items.length === 0) return null;
+    return (
+      <>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionHeaderText}>{title}</Text>
+        </View>
+        {items.map((item, index) => (
+          <View key={`${item.kind}-${item.id}`}>
+            {index > 0 && <View style={styles.separator} />}
+            <TouchableOpacity style={styles.resultRow} onPress={() => handleSelect(item)}>
+              {item.kind === 'habitat' ? (
+                <>
+                  <Text style={styles.resultName}>{item.name}</Text>
+                  {(item.habitat_code || item.habitat_type || item.region) && (
+                    <Text style={styles.resultMeta}>
+                      {[item.habitat_code, item.habitat_type, item.region].filter(Boolean).join(' · ')}
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Text style={styles.resultName}>{item.name}</Text>
+                  <Text style={styles.resultMeta}>
+                    Steward group · {[item.slug, item.region].filter(Boolean).join(' · ')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        ))}
+      </>
+    );
+  };
 
   const dropdownContent = (
     <View style={styles.dropdown}>
-      {results.length === 0 ? (
+      {!hasResults ? (
         <View style={styles.emptyRow}>
-          <Text style={styles.emptyText}>No habitats found</Text>
+          <Text style={styles.emptyText}>No habitats or steward groups found</Text>
         </View>
       ) : (
         <ScrollView
@@ -150,19 +222,11 @@ export default function GlobalSearchBar({
           style={{ maxHeight: DROPDOWN_MAX_HEIGHT }}
           nestedScrollEnabled
         >
-          {results.map((item, index) => (
-            <View key={item.id}>
-              {index > 0 && <View style={styles.separator} />}
-              <TouchableOpacity style={styles.resultRow} onPress={() => handleSelect(item)}>
-                <Text style={styles.resultName}>{item.name}</Text>
-                {(item.habitat_code || item.habitat_type || item.region) && (
-                  <Text style={styles.resultMeta}>
-                    {[item.habitat_code, item.habitat_type, item.region].filter(Boolean).join(' · ')}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ))}
+          {renderSection('Habitats', habitatResults)}
+          {habitatResults.length > 0 && groupResults.length > 0 ? (
+            <View style={styles.sectionDivider} />
+          ) : null}
+          {renderSection('Steward Groups', groupResults)}
         </ScrollView>
       )}
     </View>
@@ -196,7 +260,6 @@ export default function GlobalSearchBar({
           )}
         </View>
 
-        {/* Inline dropdown for WorldMap (sits above map WebView in the top bar) */}
         {!fullWidth && showDropdown && (
           <View style={styles.inlineDropdown}>
             {dropdownContent}
@@ -204,7 +267,6 @@ export default function GlobalSearchBar({
         )}
       </View>
 
-      {/* Modal dropdown for screens where siblings would cover an inline list */}
       {fullWidth && (
         <Modal
           visible={showDropdown}
@@ -302,6 +364,23 @@ const styles = StyleSheet.create({
   modalDropdown: {
     position: 'absolute',
     zIndex: 1,
+  },
+  sectionHeader: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+    backgroundColor: '#f8f8f5',
+  },
+  sectionHeaderText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#e8e8e8',
   },
   emptyRow: {
     padding: 16,

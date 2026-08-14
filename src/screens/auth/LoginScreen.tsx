@@ -31,7 +31,10 @@ export default function LoginScreen() {
     }
 
     setLoading(false);
-    navigation.navigate('WorldMap');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'WorldMap' }],
+    });
   };
 
   return (
