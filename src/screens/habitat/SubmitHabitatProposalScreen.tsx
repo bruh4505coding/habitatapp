@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as FileSystem from 'expo-file-system/legacy';
+import { readFileAsText } from '../../lib/fileRead';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { supabase } from '../../lib/supabase';
 import { parseKmlToPolygon, GeoJsonPolygon } from '../../lib/kml';
@@ -100,9 +100,7 @@ export default function SubmitHabitatProposalScreen() {
     if (!picked) return;
 
     try {
-      const kmlText = await FileSystem.readAsStringAsync(picked.uri, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      const kmlText = await readFileAsText(picked.uri);
       const parsed = parseKmlToPolygon(kmlText);
       if (!parsed.ok) {
         Alert.alert('Invalid KML', parsed.error);

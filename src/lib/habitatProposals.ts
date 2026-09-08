@@ -1,5 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { readFileAsBase64 } from './fileRead';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import { GeoJsonPolygon } from './kml';
@@ -526,9 +526,7 @@ export async function uploadProposalKml(
   userId: string,
 ): Promise<{ path: string | null; error: string | null }> {
   try {
-    const base64 = await FileSystem.readAsStringAsync(localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    const base64 = await readFileAsBase64(localUri);
     const arrayBuffer = base64ToArrayBuffer(base64);
     const path = `${userId}/${Date.now()}.kml`;
 

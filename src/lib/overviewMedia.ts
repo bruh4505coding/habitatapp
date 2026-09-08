@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
+import { readFileAsBase64 } from './fileRead';
 
 export type PickedMedia = {
   uri: string;
@@ -84,9 +84,7 @@ export async function uploadOverviewFile(
   kind: 'feature' | 'banner' = 'feature',
 ): Promise<{ url: string | null; error: string | null }> {
   try {
-    const base64 = await FileSystem.readAsStringAsync(localUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    const base64 = await readFileAsBase64(localUri);
 
     const arrayBuffer = base64ToArrayBuffer(base64);
     const ext = extensionFromMime(mimeType);

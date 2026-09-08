@@ -14,7 +14,8 @@
     },
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "ios": {
       "supportsTablet": false,
@@ -58,6 +59,11 @@
           "isAndroidForegroundServiceEnabled": false
         }
       ]
-    ]
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
+    }
   }
 }
