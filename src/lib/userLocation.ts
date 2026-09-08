@@ -1,4 +1,7 @@
-import { Alert, Linking, Platform } from 'react-native';
+import {
+  Linking, Platform,
+} from 'react-native';
+import { Alert } from '../lib/alert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 

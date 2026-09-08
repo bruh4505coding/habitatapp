@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState, memo } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, ActivityIndicator, Keyboard, Platform, KeyboardAvoidingView,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Keyboard, Platform, KeyboardAvoidingView,
 } from 'react-native';
+import { Alert } from '../../lib/alert';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';

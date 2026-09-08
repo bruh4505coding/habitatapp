@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native';
+import { Alert } from '../../lib/alert';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';

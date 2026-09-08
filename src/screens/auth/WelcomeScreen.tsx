@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
+import {
+  View, Text, TouchableOpacity, StyleSheet, Linking,
+} from 'react-native';
+import { Alert } from '../../lib/alert';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';

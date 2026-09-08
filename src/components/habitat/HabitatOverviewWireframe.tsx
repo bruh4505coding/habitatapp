@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image,
-  Modal, Pressable, ScrollView, Linking, Alert,
+  View, Text, StyleSheet, TouchableOpacity, Image, Modal, Pressable, ScrollView, Linking,
 } from 'react-native';
+import { Alert } from '../../lib/alert';
 import {
   formatManagementLabel,
   formatLastSurveyDate,

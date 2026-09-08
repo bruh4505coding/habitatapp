@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  ActivityIndicator, Alert, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity,
 } from 'react-native';
+import { Alert } from '../../lib/alert';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { supabase } from '../../lib/supabase';
