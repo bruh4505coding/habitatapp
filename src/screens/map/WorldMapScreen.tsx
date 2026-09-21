@@ -460,6 +460,13 @@ export default function WorldMapScreen() {
       void finishTour();
       return;
     }
+    // Tapping the demo polygon is the intended path, but the button is the
+    // guaranteed way forward when the shape is hard to hit.
+    if (tourStep === 'tapHabitat') {
+      setTourStep('overview');
+      navigation.navigate('TutorialHabitatDetail');
+      return;
+    }
     advanceTour();
   };
 

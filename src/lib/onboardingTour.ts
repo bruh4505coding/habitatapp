@@ -44,7 +44,7 @@ export const TOUR_COPY: Record<Exclude<TourStep, 'done'>, TourCopy> = {
   tapHabitat: {
     title: 'Tap a habitat',
     body: 'Each colored shape is a habitat boundary. Tap the green Demo Habitat to open it — you’ll see Overview (what’s there), Surveys (field checks), and Stewards (who cares for it).',
-    showNext: false,
+    nextLabel: 'Open Demo Habitat',
   },
   overview: {
     title: 'Overview',

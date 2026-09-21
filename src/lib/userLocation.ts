@@ -195,6 +195,16 @@ export async function getLocationPermissionState(): Promise<LocationPermissionSt
 }
 
 function showLocationSettingsAlert(): void {
+  // Browsers have no app settings screen to open — Linking.openSettings() is a
+  // no-op there, so point at the site permission control instead.
+  if (Platform.OS === 'web') {
+    Alert.alert(
+      'Location is blocked for this site',
+      'Your browser is blocking location for myHabitat. Click the lock (or location) icon in the address bar, allow Location, then reload and tap Enable location again.',
+    );
+    return;
+  }
+
   Alert.alert(
     'Turn on location for Near me',
     'Location was turned off for this app. Open Settings, enable Location → While Using the App, then come back and tap Enable location.',
@@ -227,17 +237,21 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 async function readPosition(): Promise<MapCenter | null> {
-  const servicesEnabled = await Location.hasServicesEnabledAsync();
-  if (!servicesEnabled) {
-    Alert.alert(
-      'Location Services are off',
-      'Turn on Location Services in your device Settings, then try again.',
-      [
-        { text: 'OK', style: 'cancel' },
-        { text: 'Open Settings', onPress: () => Linking.openSettings() },
-      ],
-    );
-    return null;
+  // hasServicesEnabledAsync reports the OS location toggle; on web the browser
+  // geolocation API is the only gate, so skip the check there.
+  if (Platform.OS !== 'web') {
+    const servicesEnabled = await Location.hasServicesEnabledAsync();
+    if (!servicesEnabled) {
+      Alert.alert(
+        'Location Services are off',
+        'Turn on Location Services in your device Settings, then try again.',
+        [
+          { text: 'OK', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ],
+      );
+      return null;
+    }
   }
 
   try {
@@ -249,12 +263,18 @@ async function readPosition(): Promise<MapCenter | null> {
     );
     return coordsFrom(position);
   } catch {
-    const lastKnown = await Location.getLastKnownPositionAsync({
-      maxAge: 1000 * 60 * 30,
-      requiredAccuracy: 2000,
-    });
-    if (lastKnown) {
-      return coordsFrom(lastKnown);
+    // The last-known cache is a native-only convenience; on web this call can
+    // itself throw, which would escape as an unhandled rejection.
+    try {
+      const lastKnown = await Location.getLastKnownPositionAsync({
+        maxAge: 1000 * 60 * 30,
+        requiredAccuracy: 2000,
+      });
+      if (lastKnown) {
+        return coordsFrom(lastKnown);
+      }
+    } catch {
+      return null;
     }
     return null;
   }
@@ -288,7 +308,9 @@ export async function requestMapLocation(): Promise<MapCenter | null> {
 
   Alert.alert(
     'Could not get your location',
-    'Make sure Location Services are on and try again. If you\'re on a simulator, set a simulated location under Features → Location.',
+    Platform.OS === 'web'
+      ? 'Your browser allowed location but did not return a position. Check that location is on for your device and try again.'
+      : 'Make sure Location Services are on and try again. If you\'re on a simulator, set a simulated location under Features → Location.',
   );
   return null;
 }
